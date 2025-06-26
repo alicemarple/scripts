@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+dir=$(ls ~/.config | fzf) || exit 0
+[ -z "$dir" ] && exit 0
+
+name="$dir"
+
+cd ~/.config/"$dir" || exit 1
+
+if tmux has-session -t "$name" 2>/dev/null; then
+  tmux switch-client -t "$name"
+  exit 0
+fi
+
+tmux new-session -d -s "$name" -n nvim "nvim; $SHELL"
+
+tmux new-window -t "$name" -n term "$SHELL"
+
+tmux switch-client -t "$name:1"
