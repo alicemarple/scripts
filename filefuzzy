@@ -1,0 +1,33 @@
+#!/bin/bash
+
+dir="${1:-$PWD}"
+
+while true; do
+  cd "$dir" || break
+
+  entries=$(echo "../" && fd --hidden --follow --max-depth 1 --color=never --exclude .git --exclude node_modules --exclude target --base-directory . '' | sed 's|^\./||')
+
+  selected=$(echo "$entries" |
+    fzf --ansi \
+      --prompt=" $(basename "$(dirname "$dir")")/$(basename "$dir") > " \
+      --height=40% \
+      --preview-window=right:50% \
+      --preview='[[ -d {} ]] && eza -aT --color=always --icons --level=1 {} || bat --style=numbers --color=always --line-range=:100 {} || cat {}')
+
+  [ -z "$selected" ] && break
+
+  if [[ "$selected" == "../" ]]; then
+    dir="$(dirname "$dir")"
+    continue
+  fi
+
+  fullpath="$dir/$selected"
+
+  if [ -d "$fullpath" ]; then
+    dir="$fullpath"
+  else
+    nvim "$fullpath"
+    # cd "$dir" && nvim "$selected" # to cd works use this as the shell function
+    break
+  fi
+done
